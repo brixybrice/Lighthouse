@@ -1,0 +1,30 @@
+[project]
+name = "lighthouse"
+description = "Standalone macOS lux meter and exposure calculator, driven by two ESP32/BH1750 sensors over UDP."
+requires-python = ">=3.10"
+dynamic = ["version"]
+dependencies = [
+    "PySide6",
+    # Native NSStatusItem menu bar text (tray_icon.py) — QSystemTrayIcon's
+    # icon-pixmap scaling hits an unpredictable size ceiling, see CLAUDE.md.
+    "pyobjc-framework-Cocoa",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pyinstaller",
+]
+
+[project.scripts]
+lighthouse = "lighthouse.main:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.dynamic]
+version = { attr = "lighthouse.__version__" }
