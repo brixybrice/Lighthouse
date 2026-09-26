@@ -47,6 +47,19 @@ class UdpListenerWorker(QThread):
         sock.setblocking(False)
         return sock
 
+    @staticmethod
+    def _trigger_local_network_prompt() -> None:
+        # macOS only shows the "Local Network" permission prompt when an app
+        # sends to the LAN; a receive-only app never triggers it and gets
+        # broadcast packets silently dropped. One harmless byte to the
+        # discard port is enough.
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+                s.sendto(b"\0", ("255.255.255.255", 9))
+        except OSError as exc:
+            _logger.info("Local-network trigger send failed (harmless): %s", exc)
+
     def run(self) -> None:
         try:
             self._run()
@@ -68,6 +81,7 @@ class UdpListenerWorker(QThread):
             return
 
         _logger.info("Listening for %s on ports %s", list(sockets.values()), [s.getsockname()[1] for s in sockets])
+        self._trigger_local_network_prompt()
         try:
             while not self._stop.is_set():
                 ready, _, _ = select.select(list(sockets.keys()), [], [], SELECT_TIMEOUT_SECONDS)
